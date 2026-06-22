@@ -25,15 +25,6 @@ load_dotenv()
 
 logger = setup_logger(__name__)
 
-# Global flag for shutdown
-is_shutting_down = False
-
-def signal_handler(sig, frame):
-    """Catches Ctrl+C or server termination signals to shut down safely."""
-    global is_shutting_down
-    logger.warning("\nShutdown signal received! Finishing current tasks before exiting...")
-    is_shutting_down = True
-
 def run_amusEcode_email_watcher():
     logger.info("Starting automated email watcher...")
     
@@ -88,24 +79,15 @@ def run_amusEcode_email_watcher():
             logger.exception(f"CRITICAL ERROR processing Email ID {email_id}: {str(e)}")
 
 if __name__ == "__main__":
-    # Register the graceful shutdown signals
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-
-    # Load interval from .env, default to 300 if not found
-    POLL_INTERVAL_SECONDS = int(os.getenv("POLL_INTERVAL_SECONDS", 300))
+    logger.info("Email Agent Cron Task started.")
     
-    logger.info("Email Agent Service Engine launched successfully. Press Ctrl+C to stop.")
-    
-    # The Infinite Polling Loop
-    while not is_shutting_down:
+    try:
+        # Run the watcher exactly ONCE
         run_amusEcode_email_watcher()
+        logger.info("Email Agent Cron Task completed successfully.")
         
-        # Sleep in small chunks so we can interrupt the sleep if shutting down
-        logger.info(f"Sleeping for {POLL_INTERVAL_SECONDS} seconds before next run...")
-        for _ in range(POLL_INTERVAL_SECONDS):
-            if is_shutting_down:
-                break
-            time.sleep(1)
-            
-    logger.info("Service Engine completely shut down.")
+    except Exception as e:
+        # If the entire process fails critically, log it and raise it 
+        # so the server scheduler (Render) registers it as a failed job run.
+        logger.error(f"Cron Task failed with a critical error: {e}")
+        raise e
