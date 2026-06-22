@@ -1,9 +1,9 @@
 import os
 import base64
-import logging
 import requests
 from typing import Literal
 from email.message import EmailMessage
+from src.logger import setup_logger
 
 from langgraph.types import Command, interrupt
 from langgraph.graph import END
@@ -15,7 +15,7 @@ from src.config import llm, retriever
 from src.tools import get_gmail_service
 from src.utils import extract_body_from_gmail_payload
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 def read_email(state: EmailAgentState) -> dict:
     service = get_gmail_service()
