@@ -1,0 +1,25 @@
+# Python caches and environments
+.env
+.venv
+venv
+env
+ENV
+*/.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Git 
+.git/
+.gitignore
+
+# Local Logs and data
+logs/
+*.log
+
+# IDEs
+.vscode/
+.idea/

@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  support-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: amusEcode_support_agent
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
