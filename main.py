@@ -43,11 +43,6 @@ def run_amusEcode_email_watcher():
     logger.info(f"Found {len(messages)} new email(s). Initiating agent workflows...")
 
     for msg in messages:
-        # Check if we should stop before processing the next email
-        if is_shutting_down:
-            logger.warning("Aborting loop due to shutdown. Unprocessed emails will remain UNREAD.")
-            break 
-
         email_id = msg['id']
         thread_id = msg.get('threadId')
         logger.info(f"--- Processing Email ID: {email_id} ---")
@@ -58,7 +53,7 @@ def run_amusEcode_email_watcher():
                 "thread_id": thread_id
             }
             
-            config = {"configurable": {"thread_id": f"thread_{email_id}"}}
+            config = {"configurable": {"thread_id": f"thread_{thread_id}"}}
             
             # Run the AI workflow
             final_state = app.invoke(initial_state, config=config)
