@@ -1,6 +1,9 @@
+import os
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import RetryPolicy
-from langgraph.checkpoint.memory import MemorySaver
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
+from langgraph.checkpoint.mongodb import MongoDBSaver
 
 # Project Internal Imports
 from src.state import EmailAgentState
@@ -29,6 +32,9 @@ workflow.add_edge(START, "read_email")
 workflow.add_edge("read_email", "classify_intent")
 workflow.add_edge("send_reply", END)
 
-# Compile with checkpointer for persistence, in case run graph with Local_Server --> Please compile without checkpointer
-memory = MemorySaver()
-app = workflow.compile(checkpointer=memory)
+mongo_uri = os.getenv("MONGO_URI")
+client = MongoClient(mongo_uri, server_api=ServerApi('1'))
+
+checkpointer = MongoDBSaver(client)
+    
+app = workflow.compile(checkpointer=checkpointer)
