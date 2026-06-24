@@ -183,6 +183,7 @@ def draft_response(state: EmailAgentState) -> Command[Literal["human_review", "s
     - Be professional and helpful
     - Address their specific concern
     - Use the provided documentation when relevant
+    - CRITICAL: If a [BUG_TICKET] is provided in the context above, you MUST explicitly include the Ticket ID and the Link in your response to the user.
     - IMPORTANT: Provide ONLY the body of the email. Do not include a 'Subject:' line, 
       headers, or metadata. Start directly with the salutation.
     - Sign the email exactly as follows:
