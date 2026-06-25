@@ -35,7 +35,7 @@ workflow.add_edge("send_reply", END)
 mongo_uri = os.getenv("MONGO_URI")
 client = MongoClient(
     mongo_uri, 
-    server_api=ServerApi('1'),
+    server_api=ServerApi('1')
     )
 
 checkpointer = MongoDBSaver(client)
