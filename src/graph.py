@@ -1,4 +1,5 @@
 import os
+import ssl
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import RetryPolicy
 from pymongo import MongoClient
