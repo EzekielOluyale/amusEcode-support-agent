@@ -1,5 +1,5 @@
 import os
-import ssl
+import certifi
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import RetryPolicy
 from pymongo import MongoClient
@@ -37,7 +37,9 @@ mongo_uri = os.getenv("MONGO_URI")
 
 client = MongoClient(
     mongo_uri,
-    server_api=ServerApi('1')
+    server_api=ServerApi('1'),
+    tls=True,
+    tlsCAFile=certifi.where()
 )
 
 checkpointer = MongoDBSaver(client)
