@@ -21,6 +21,12 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Install CA Certificates
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates
+          update-ca-certificates
+
       - name: Run script
         run: python main.py
         env:
