@@ -33,7 +33,13 @@ workflow.add_edge("read_email", "classify_intent")
 workflow.add_edge("send_reply", END)
 
 mongo_uri = os.getenv("MONGO_URI")
-client = MongoClient(mongo_uri, server_api=ServerApi('1'))
+client = MongoClient(
+    mongo_uri, 
+    server_api=ServerApi('1')
+    serverSelectionTimeoutMS=30000,
+    ssl=True,
+    ssl_cert_reqs=ssl.CERT_REQUIRED
+    )
 
 checkpointer = MongoDBSaver(client)
     
