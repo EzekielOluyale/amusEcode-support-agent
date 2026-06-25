@@ -35,16 +35,11 @@ workflow.add_edge("send_reply", END)
 
 mongo_uri = os.getenv("MONGO_URI")
 
-# Create SSL context with proper certificate handling
-ssl_context = ssl.create_default_context()
-ssl_context.check_hostname = True
-ssl_context.verify_mode = ssl.CERT_REQUIRED
-
 client = MongoClient(
     mongo_uri,
     server_api=ServerApi('1'),
-    tlsCAFile=None,  # Uses system default CA certificates
-    ssl_context=ssl_context
+    ssl=True,
+    retryWrites=True
 )
 
 checkpointer = MongoDBSaver(client)
