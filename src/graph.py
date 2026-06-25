@@ -1,9 +1,11 @@
 import os
 import certifi
+import time
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import RetryPolicy
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
+from pymongo.errors import ServerSelectionTimeoutError
 from langgraph.checkpoint.mongodb import MongoDBSaver
 
 # Project Internal Imports
@@ -35,12 +37,31 @@ workflow.add_edge("send_reply", END)
 
 mongo_uri = os.getenv("MONGO_URI")
 
-client = MongoClient(
-    mongo_uri,
-    server_api=ServerApi('1'),
-    tls=True,
-    tlsCAFile=certifi.where()
-)
+# Retry logic for SSL handshake issues
+max_retries = 3
+retry_delay = 2
+
+for attempt in range(max_retries):
+    try:
+        client = MongoClient(
+            mongo_uri,
+            server_api=ServerApi('1'),
+            tls=True,
+            tlsCAFile=certifi.where(),
+            serverSelectionTimeoutMS=30000,  # Increase timeout from 20s to 30s
+            connectTimeoutMS=30000,
+            socketTimeoutMS=30000,
+            retryWrites=True
+        )
+        # Verify connection
+        client.admin.command('ping')
+        break
+    except ServerSelectionTimeoutError as e:
+        if attempt < max_retries - 1:
+            print(f"Connection attempt {attempt + 1} failed, retrying in {retry_delay}s...")
+            time.sleep(retry_delay)
+        else:
+            raise
 
 checkpointer = MongoDBSaver(client)
     
