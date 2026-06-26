@@ -9,8 +9,11 @@ from pymongo.errors import ServerSelectionTimeoutError
 from langgraph.checkpoint.mongodb import MongoDBSaver
 
 # Project Internal Imports
+from src.logger import setup_logger
 from src.state import EmailAgentState
 from src.nodes import read_email, classify_intent, search_documentation, bug_tracking, draft_response, human_review, send_reply
+
+logger = setup_logger(__name__)
 
 # Create the graph
 workflow = StateGraph(EmailAgentState)
@@ -37,12 +40,18 @@ workflow.add_edge("send_reply", END)
 
 mongo_uri = os.getenv("MONGO_URI")
 
+if not mongo_uri:
+    logger.critical("MONGO_URI environment variable is completely missing!")
+    raise ValueError("CRITICAL: Application cannot start without a valid database connection string.")
+
 # Retry logic for SSL handshake issues
 max_retries = 3
 retry_delay = 2
+client = None
 
 for attempt in range(max_retries):
     try:
+        logger.info(f"Initiating MongoDB cluster handshake (Attempt {attempt + 1}/{max_retries})...")
         client = MongoClient(
             mongo_uri,
             server_api=ServerApi('1'),
@@ -55,10 +64,17 @@ for attempt in range(max_retries):
         )
         # Verify connection
         client.admin.command('ping')
+        logger.info("MongoDB cluster connection verified successfully.")
         break
     except ServerSelectionTimeoutError as e:
+        # Calculate Exponential Backoff: Attempt 0 = 2s, Attempt 1 = 4s, Attempt 2 = 8s
+        current_delay = retry_delay * (2 ** attempt)
+
         if attempt < max_retries - 1:
-            print(f"Connection attempt {attempt + 1} failed, retrying in {retry_delay}s...")
+            logger.warning(
+                f"Network socket timeout on attempt {attempt + 1}. "
+                f"Retrying in {current_delay}s... Details: {e}"
+            )
             time.sleep(retry_delay)
         else:
             raise
