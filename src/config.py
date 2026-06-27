@@ -3,17 +3,21 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 from pinecone import Pinecone
 from langchain_pinecone import PineconeVectorStore
 
-# Load environment variables globally
-load_dotenv()
+api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+
+if not api_key:
+    raise ValueError("CRITICAL ERROR: No API Key found in environment variables.")
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     temperature=0,
+    google_api_key=api_key
     )
 
 # Vector Database & Retriever
 embeddings = GoogleGenerativeAIEmbeddings(
-    model="text-embedding-004"
+    model="text-embedding-004",
+    google_api_key=api_key
 )
 
 pc = Pinecone()
