@@ -26,6 +26,7 @@ jobs:
       - name: Run Tests
         run: pytest tests/
         env:
+          PYTHONPATH: ${{ github.workspace }}
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
           GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
