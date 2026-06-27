@@ -12,13 +12,15 @@ if not api_key:
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     temperature=0,
-    google_api_key=api_key
+    google_api_key=api_key,
+    vertexai=True
     )
 
 # Vector Database & Retriever
 embeddings = GoogleGenerativeAIEmbeddings(
     model="text-embedding-004",
-    google_api_key=api_key
+    google_api_key=api_key,
+    vertexai=True
 )
 
 pc = Pinecone()
