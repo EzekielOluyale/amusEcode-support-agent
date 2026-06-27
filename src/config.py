@@ -8,14 +8,12 @@ load_dotenv()
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
-    vertexai=True,
     temperature=0,
     )
 
 # Vector Database & Retriever
 embeddings = GoogleGenerativeAIEmbeddings(
-    model="text-embedding-004",
-    vertexai=True
+    model="text-embedding-004"
 )
 
 pc = Pinecone()
