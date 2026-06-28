@@ -7,13 +7,14 @@ from src.logger import setup_logger
 
 from langgraph.types import Command, interrupt
 from langgraph.graph import END
-from langchain.messages import HumanMessage
+from langchain.messages import SystemMessage, HumanMessage
 
 # Project Internal Imports
 from src.state import EmailAgentState, EmailClassification
 from src.config import llm, retriever
 from src.tools import get_gmail_service
 from src.utils import extract_body_from_gmail_payload
+from src.prompts import SYSTEM_PROMPT
 
 logger = setup_logger(__name__)
 
