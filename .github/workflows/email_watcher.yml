@@ -40,7 +40,7 @@ jobs:
           LANGSMITH_PROJECT: ${{ secrets.LANGSMITH_PROJECT }}
           PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
           PINECONE_INDEX: ${{ secrets.PINECONE_INDEX }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
           PYTHONUNBUFFERED: 1
