@@ -179,20 +179,18 @@ def draft_response(state: EmailAgentState) -> Command[Literal["human_review", "s
 
     {chr(10).join(context_sections)}
 
-    Guidelines:
-    - Be professional and helpful
-    - Address their specific concern
-    - Use the provided documentation when relevant
+    TASK INSTRUCTIONS:
+    - Address their specific concern directly.
+    - Use the provided documentation when relevant.
     - CRITICAL: If a [BUG_TICKET] is provided in the context above, you MUST explicitly include the Ticket ID and the Link in your response to the user.
-    - IMPORTANT: Provide ONLY the body of the email. Do not include a 'Subject:' line, 
-      headers, or metadata. Start directly with the salutation.
-    - Sign the email exactly as follows:
-      Best regards,
-      Ezekiel Oluyale
-      amusEcode Team
     """
 
-    response = llm.invoke(draft_prompt)
+    messages = [
+        SystemMessage(content=AMUSECODE_SYSTEM_PROMPT),
+        HumanMessage(content=draft_prompt)
+    ]
+
+    response = llm.invoke(messages)
 
     # Determine if human review needed based on urgency and intent
     needs_review = (
