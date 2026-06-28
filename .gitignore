@@ -220,3 +220,6 @@ __marimo__/
 # Security credentials
 credentials.json
 token.json
+
+# data
+data
