@@ -187,7 +187,7 @@ def draft_response(state: EmailAgentState) -> Command[Literal["human_review", "s
     """
 
     messages = [
-        SystemMessage(content=AMUSECODE_SYSTEM_PROMPT),
+        SystemMessage(content=SYSTEM_PROMPT),
         HumanMessage(content=draft_prompt)
     ]
 
