@@ -162,28 +162,23 @@ def draft_response(state: EmailAgentState) -> Command[Literal["human_review", "s
     context_sections = []
 
     if state.get('search_results'):
-        # Format search results for the prompt
         formatted_docs = "\n".join([f"- {doc}" for doc in state['search_results']])
         context_sections.append(f"Relevant documentation:\n{formatted_docs}")
+    else:
+        context_sections.append("Relevant documentation:\n- None found")
 
     if state.get('customer_history'):
-        # Format customer data for the prompt
         context_sections.append(f"Customer tier: {state['customer_history'].get('tier', 'standard')}")
+    else:
+        context_sections.append("Customer tier: No history found")
 
-    # Build the prompt with formatted context
     draft_prompt = f"""
     Draft a response to this customer email:
     {state['email_content']}
 
-    Email intent: {classification.get('intent', 'unknown')}
-    Urgency level: {classification.get('urgency', 'unknown')}
-
+    AGENT DATA    
+    Classification: {json.dumps(classification, indent=2)}
     {chr(10).join(context_sections)}
-
-    TASK INSTRUCTIONS:
-    - Address their specific concern directly.
-    - Use the provided documentation when relevant.
-    - CRITICAL: If a [BUG_TICKET] is provided in the context above, you MUST explicitly include the Ticket ID and the Link in your response to the user.
     """
 
     messages = [
