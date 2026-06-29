@@ -1,4 +1,5 @@
 import os
+import json
 import base64
 import requests
 from typing import Literal
@@ -7,13 +8,14 @@ from src.logger import setup_logger
 
 from langgraph.types import Command, interrupt
 from langgraph.graph import END
-from langchain.messages import HumanMessage
+from langchain.messages import SystemMessage, HumanMessage
 
 # Project Internal Imports
 from src.state import EmailAgentState, EmailClassification
 from src.config import llm, retriever
 from src.tools import get_gmail_service
 from src.utils import extract_body_from_gmail_payload
+from src.prompts import SYSTEM_PROMPT
 
 logger = setup_logger(__name__)
 
@@ -161,38 +163,31 @@ def draft_response(state: EmailAgentState) -> Command[Literal["human_review", "s
     context_sections = []
 
     if state.get('search_results'):
-        # Format search results for the prompt
         formatted_docs = "\n".join([f"- {doc}" for doc in state['search_results']])
         context_sections.append(f"Relevant documentation:\n{formatted_docs}")
+    else:
+        context_sections.append("Relevant documentation:\n- None found")
 
     if state.get('customer_history'):
-        # Format customer data for the prompt
         context_sections.append(f"Customer tier: {state['customer_history'].get('tier', 'standard')}")
+    else:
+        context_sections.append("Customer tier: No history found")
 
-    # Build the prompt with formatted context
     draft_prompt = f"""
     Draft a response to this customer email:
     {state['email_content']}
 
-    Email intent: {classification.get('intent', 'unknown')}
-    Urgency level: {classification.get('urgency', 'unknown')}
-
+    AGENT DATA    
+    Classification: {json.dumps(classification, indent=2)}
     {chr(10).join(context_sections)}
-
-    Guidelines:
-    - Be professional and helpful
-    - Address their specific concern
-    - Use the provided documentation when relevant
-    - CRITICAL: If a [BUG_TICKET] is provided in the context above, you MUST explicitly include the Ticket ID and the Link in your response to the user.
-    - IMPORTANT: Provide ONLY the body of the email. Do not include a 'Subject:' line, 
-      headers, or metadata. Start directly with the salutation.
-    - Sign the email exactly as follows:
-      Best regards,
-      Ezekiel Oluyale
-      amusEcode Team
     """
 
-    response = llm.invoke(draft_prompt)
+    messages = [
+        SystemMessage(content=SYSTEM_PROMPT),
+        HumanMessage(content=draft_prompt)
+    ]
+
+    response = llm.invoke(messages)
 
     # Determine if human review needed based on urgency and intent
     needs_review = (

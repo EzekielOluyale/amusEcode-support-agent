@@ -1,9 +1,8 @@
 name: Email Watcher Cron Job
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'
-
+  push:
+    branches: [ testing-railway-deploy ]
   workflow_dispatch:
 
 jobs:
@@ -19,11 +18,15 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
 
-      - name: Run script
-        run: python main.py
+      - name: Run Tests
+        run: pytest tests/
         env:
+          PYTHONPATH: ${{ github.workspace }}
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
           GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
@@ -37,7 +40,7 @@ jobs:
           LANGSMITH_PROJECT: ${{ secrets.LANGSMITH_PROJECT }}
           PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
           PINECONE_INDEX: ${{ secrets.PINECONE_INDEX }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
           PYTHONUNBUFFERED: 1
