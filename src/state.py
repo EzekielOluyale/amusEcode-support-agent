@@ -11,6 +11,8 @@ class EmailAgentState(TypedDict):
     # Raw email data
     email_content: str
     sender_email: str
+    sender_firstname: str | None  
+    sender_lastname: str | None   
     email_id: str
     thread_id: str | None
     email_subject: str
