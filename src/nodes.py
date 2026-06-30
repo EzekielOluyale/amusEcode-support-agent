@@ -53,6 +53,8 @@ def read_email(state: EmailAgentState) -> dict:
             lastname = ""
 
         full_body = extract_body_from_gmail_payload(msg['payload'])
+        if not full_body:
+            full_body = None
     
         return {
             "email_content": full_body,
