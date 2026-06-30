@@ -14,6 +14,7 @@ class EmailAgentState(TypedDict):
     sender_firstname: str | None  
     sender_lastname: str | None   
     email_id: str
+    message_id: str | None
     thread_id: str | None
     email_subject: str
 

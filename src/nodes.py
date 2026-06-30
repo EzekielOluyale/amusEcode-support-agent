@@ -33,14 +33,14 @@ def read_email(state: EmailAgentState) -> dict:
         # Extract headers (like 'From')
         headers = msg['payload']['headers']
         subject = next(h['value'] for h in headers if h['name'] == 'Subject')
+        message_id = next((h['value'] for h in headers if h['name'].lower() == 'message-ID'), None)
         sender_raw = next(h['value'] for h in headers if h['name'] == 'From')
 
         if '<' in sender_raw:
-            # Example: "Ezekiel Oluyale <eze@example.com>"
+            # Example: "Ezekiel Oluyale <amusecode@example.com>"
             full_name = sender_raw.split('<')[0].strip()
             sender_email = sender_raw.split('<')[-1].strip('>')
             
-            # Remove any extra quotes Gmail sometimes adds to names
             full_name = full_name.replace('"', '').strip()
             
             # Split into first and last name
@@ -48,7 +48,6 @@ def read_email(state: EmailAgentState) -> dict:
             firstname = name_parts[0]
             lastname = name_parts[1] if len(name_parts) > 1 else ""
         else:
-            # Fallback if it's just "eze@example.com" with no name attached
             sender_email = sender_raw.strip()
             firstname = ""
             lastname = ""
@@ -61,6 +60,7 @@ def read_email(state: EmailAgentState) -> dict:
             "sender_firstname": firstname,
             "sender_lastname": lastname,
             "email_subject": subject,
+            "message_id": message_id,
             "messages": [HumanMessage(content=f"Successfully fetched email from {sender_email}")]
         }
     except Exception as e:
@@ -349,8 +349,8 @@ def send_reply(state: EmailAgentState) -> dict:
     message['to'] = state['sender_email']
     message['subject'] = f"Re: {state.get('email_subject', 'Support Request')}"
 
-    message['In-Reply-To'] = state['email_id']
-    message['References'] = state['email_id']
+    message['In-Reply-To'] = state['message_id']
+    message['References'] = state['message_id']
 
     encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
 
