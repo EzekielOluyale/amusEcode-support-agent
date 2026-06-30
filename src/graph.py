@@ -11,7 +11,7 @@ from langgraph.checkpoint.mongodb import MongoDBSaver
 # Project Internal Imports
 from src.logger import setup_logger
 from src.state import EmailAgentState
-from src.nodes import read_email, classify_intent, search_documentation, bug_tracking, draft_response, human_review, send_reply
+from src.nodes import read_email, check_crm, classify_intent, search_documentation, bug_tracking, draft_response, human_review, send_reply
 
 logger = setup_logger(__name__)
 
