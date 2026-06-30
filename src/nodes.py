@@ -33,17 +33,112 @@ def read_email(state: EmailAgentState) -> dict:
         # Extract headers (like 'From')
         headers = msg['payload']['headers']
         subject = next(h['value'] for h in headers if h['name'] == 'Subject')
-        sender = next(h['value'] for h in headers if h['name'] == 'From')
+        message_id = next((h['value'] for h in headers if h['name'].lower() == 'message-id'), None)
+        sender_raw = next(h['value'] for h in headers if h['name'] == 'From')
+
+        if '<' in sender_raw:
+            # Example: "Ezekiel Oluyale <amusecode@example.com>"
+            full_name = sender_raw.split('<')[0].strip()
+            sender_email = sender_raw.split('<')[-1].strip('>')
+            
+            full_name = full_name.replace('"', '').strip()
+            
+            # Split into first and last name
+            name_parts = full_name.split(' ', 1)
+            firstname = name_parts[0]
+            lastname = name_parts[1] if len(name_parts) > 1 else ""
+        else:
+            sender_email = sender_raw.strip()
+            firstname = ""
+            lastname = ""
+
         full_body = extract_body_from_gmail_payload(msg['payload'])
+        if not full_body:
+            full_body = None
     
         return {
             "email_content": full_body,
-            "sender_email": sender,
+            "sender_email": sender_email,
+            "sender_firstname": firstname,
+            "sender_lastname": lastname,
             "email_subject": subject,
-            "messages": [HumanMessage(content=f"Successfully fetched email from {sender}")]
+            "message_id": message_id,
+            "messages": [HumanMessage(content=f"Successfully fetched email from {sender_email}")]
         }
     except Exception as e:
         return {"messages": [HumanMessage(content=f"Error fetching email: {str(e)}")]}
+
+def check_crm(state: EmailAgentState) -> dict:
+    """Fetch customer details from HubSpot CRM or create a new contact if not found."""
+    sender_email = state.get('sender_email')
+    sender_firstname = state.get('sender_firstname', '')
+    sender_lastname = state.get('sender_lastname', '')
+    
+    if not sender_email:
+        return {"customer_history": None}
+        
+    hubspot_token = os.getenv("HUBSPOT_API_TOKEN")
+    if not hubspot_token:
+        logger.warning("HUBSPOT_API_TOKEN missing. Skipping CRM check.")
+        return {"customer_history": None}
+
+    headers = {
+        "Authorization": f"Bearer {hubspot_token}",
+        "Content-Type": "application/json"
+    }
+    
+    # Try to get the contact using the v3 Contacts API
+    search_url = f"https://api.hubapi.com/crm/v3/objects/contacts/{sender_email}?idProperty=email&properties=customer_tier,firstname,lastname"
+    
+    try:
+        response = requests.get(search_url, headers=headers)
+        
+        if response.status_code == 200:
+            contact_data = response.json()
+            properties = contact_data.get("properties", {})
+            logger.info(f"Retrieved HubSpot CRM data for {sender_email}")
+            
+            return {
+                "customer_history": {
+                    "id": contact_data.get("id"),
+                    "tier": properties.get("customer_tier", "standard"),
+                    "firstname": properties.get("firstname", ""),
+                    "lastname": properties.get("lastname", ""),
+                }
+            }
+            
+        elif response.status_code == 404:
+            # Contact not found, auto-create them in HubSpot
+            create_url = "https://api.hubapi.com/crm/v3/objects/contacts"
+            payload = {
+                "properties": {
+                    "email": sender_email,
+                    "customer_tier": "standard",
+                    "firstname": sender_firstname,
+                    "lastname": sender_lastname
+                }
+            }
+            create_resp = requests.post(create_url, json=payload, headers=headers)
+            create_resp.raise_for_status()
+            new_contact = create_resp.json()
+            
+            logger.info(f"Created new HubSpot contact profile for {sender_email}")
+            
+            return {
+                "customer_history": {
+                    "id": new_contact.get("id"),
+                    "tier": "standard",
+                    "firstname": sender_firstname,
+                    "lastname": sender_lastname,
+                }
+            }
+        else:
+            logger.error(f"HubSpot API error: {response.text}")
+            return {"customer_history": None}
+            
+    except Exception as e:
+        logger.error(f"Failed to connect to HubSpot CRM: {e}")
+        return {"customer_history": None}
 
 def classify_intent(state: EmailAgentState) -> Command[Literal["search_documentation", "human_review", "draft_response", "bug_tracking"]]:
     """Use LLM to classify email intent and urgency, then route accordingly"""
@@ -212,9 +307,9 @@ def human_review(state: EmailAgentState) -> dict:
     message['to'] = state['sender_email']
     message['subject'] = f"Re: {state.get('email_subject', 'Support Request')}"
     
-    if state.get('email_id'):
-        message['In-Reply-To'] = state['email_id']
-        message['References'] = state['email_id']
+    if state.get('message_id'):
+        message['In-Reply-To'] = state['message_id']
+        message['References'] = state['message_id']
         
     encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
     
@@ -256,8 +351,8 @@ def send_reply(state: EmailAgentState) -> dict:
     message['to'] = state['sender_email']
     message['subject'] = f"Re: {state.get('email_subject', 'Support Request')}"
 
-    message['In-Reply-To'] = state['email_id']
-    message['References'] = state['email_id']
+    message['In-Reply-To'] = state['message_id']
+    message['References'] = state['message_id']
 
     encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
 
