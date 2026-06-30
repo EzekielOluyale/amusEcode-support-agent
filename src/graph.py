@@ -24,6 +24,12 @@ workflow.add_node("classify_intent", classify_intent)
 
 # Add retry policy for nodes that might have transient failures
 workflow.add_node(
+    "check_crm",
+    check_crm,
+    retry_policy=RetryPolicy(max_attempts=3)
+)
+
+workflow.add_node(
     "search_documentation",
     search_documentation,
     retry_policy=RetryPolicy(max_attempts=3)
@@ -35,7 +41,8 @@ workflow.add_node("send_reply", send_reply)
 
 # Add only the essential edges
 workflow.add_edge(START, "read_email")
-workflow.add_edge("read_email", "classify_intent")
+workflow.add_edge("read_email", "check_crm")
+workflow.add_edge("check_crm", "classify_intent")
 workflow.add_edge("send_reply", END)
 
 mongo_uri = os.getenv("MONGO_URI")
