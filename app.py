@@ -3,15 +3,18 @@ from supabase import create_client, Client
 import os
 import base64
 from email.message import EmailMessage
+from dotenv import load_dotenv
 from src.tools import get_gmail_service 
+
+load_dotenv()
 
 # Setup Data Connections
 st.set_page_config(page_title="AI Email Command Center", layout="wide")
 
 @st.cache_resource
 def init_connection():
-    url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_KEY")
+    url = os.getenv("SUPABASE_URL")
+    key = os.getenv("SUPABASE_KEY")
     return create_client(url, key)
 
 supabase = init_connection()
