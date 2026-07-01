@@ -401,7 +401,7 @@ def send_reply(state: EmailAgentState) -> dict:
             "email_content": state.get('email_content', ''),
             "intent": state.get('classification', {}).get('intent', 'unknown'),
             "urgency": state.get('classification', {}).get('urgency', 'unknown'),
-            "status": "pending_review"
+            "status": "sent"
         }).execute()
         
         logger.info(f"Email sent successfully. Message ID: {send_message['id']}")
