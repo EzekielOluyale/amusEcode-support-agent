@@ -43,4 +43,6 @@ jobs:
           GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           PYTHONUNBUFFERED: 1
