@@ -2,6 +2,7 @@ import os
 import json
 import base64
 import requests
+from dotenv import load_dotenv
 from typing import Literal
 from email.message import EmailMessage
 from src.logger import setup_logger
@@ -18,6 +19,9 @@ from src.config import llm, retriever
 from src.tools import get_gmail_service
 from src.utils import extract_body_from_gmail_payload
 from src.prompts import SYSTEM_PROMPT
+
+# Load environment variables
+load_dotenv()
 
 logger = setup_logger(__name__)
 
