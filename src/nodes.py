@@ -26,8 +26,8 @@ load_dotenv()
 logger = setup_logger(__name__)
 
 # Initialize Supabase
-supabase_url = os.environ.get("SUPABASE_URL")
-supabase_key = os.environ.get("SUPABASE_KEY")
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
 def read_email(state: EmailAgentState) -> dict:
