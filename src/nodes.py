@@ -10,6 +10,8 @@ from langgraph.types import Command, interrupt
 from langgraph.graph import END
 from langchain.messages import SystemMessage, HumanMessage
 
+from supabase import create_client, Client
+
 # Project Internal Imports
 from src.state import EmailAgentState, EmailClassification
 from src.config import llm, retriever
@@ -18,6 +20,11 @@ from src.utils import extract_body_from_gmail_payload
 from src.prompts import SYSTEM_PROMPT
 
 logger = setup_logger(__name__)
+
+# Initialize Supabase
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(supabase_url, supabase_key)
 
 def read_email(state: EmailAgentState) -> dict:
     service = get_gmail_service()
@@ -328,15 +335,27 @@ def human_review(state: EmailAgentState) -> dict:
         .drafts()
         .create(userId="me", body=create_message)
         .execute()
-    )
+        )
+
+         # Save to Supabase
+        supabase.table("email_drafts").insert({
+            "sender_email": state['sender_email'],
+            "email_subject": state.get('email_subject', '(No Subject)'),
+            "draft_body": state['draft_response'],
+            "draft_id": draft['id'],
+            "email_content": state.get('email_content', ''),
+            "intent": state.get('classification', {}).get('intent', 'unknown'),
+            "urgency": state.get('classification', {}).get('urgency', 'unknown'),
+            "status": "pending_review"
+        }).execute()
         
-        logger.info(f"Gmail draft created successfully. Draft ID: {draft['id']}")
+        logger.info(f"Email draft created successfully. Draft ID: {draft['id']}")
         return {
             "messages": [HumanMessage(content=f"Draft created for human review. ID: {draft['id']}")]
         }
         
     except Exception as e:
-        logger.error(f"CRITICAL ERROR creating draft: {e}")
+        logger.error(f"Failed to draft email or save to Supabase: {e}")
         return {
             "messages": [HumanMessage(content=f"Error creating draft: {str(e)}")]
         }
@@ -367,13 +386,27 @@ def send_reply(state: EmailAgentState) -> dict:
         .messages()
         .send(userId="me", body=create_message)
         .execute()
-    )
+        )
+
+        # Save to Supabase
+        supabase.table("email_drafts").insert({
+            "sender_email": state['sender_email'],
+            "email_subject": state.get('email_subject', '(No Subject)'),
+            "draft_body": state['draft_response'],
+            "draft_id": send_message['id'],
+            "email_content": state.get('email_content', ''),
+            "intent": state.get('classification', {}).get('intent', 'unknown'),
+            "urgency": state.get('classification', {}).get('urgency', 'unknown'),
+            "status": "pending_review"
+        }).execute()
         
+        logger.info(f"Email sent successfully. Message ID: {send_message['id']}")
         return {
             "messages": [HumanMessage(content=f"Email sent successfully! ID: {send_message['id']}")]
         }
         
     except Exception as e:
+        logger.error(f"Failed to send email or save to Supabase: {e}")
         return {
             "messages": [HumanMessage(content=f"Error sending email: {str(e)}")]
         }
