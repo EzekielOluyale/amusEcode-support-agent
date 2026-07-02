@@ -66,13 +66,13 @@ with tab1:
 
         # Collapsible box for the original customer email
         with st.expander("👀 View Original Customer Email", expanded=False):
-            st.text(selected_email.get('customer_email_content', 'No content available.'))
+            st.text(selected_email.get('email_content', 'No content available.'))
 
         # Editing Area
         st.markdown("### AI Draft Proposal")
         edited_body = st.text_area(
             "Review and edit the AI draft:", 
-            value=selected_email['ai_draft_body'], 
+            value=selected_email['draft_body'], 
             height=300
         )
 
@@ -81,8 +81,8 @@ with tab1:
             if st.button("💾 Save Edits (Don't Send)", use_container_width=True):
                 with st.spinner("Updating..."):
                     raw_msg = create_raw_email(selected_email['sender_email'], selected_email['email_subject'], edited_body)
-                    gmail_service.users().drafts().update(userId="me", id=selected_email['gmail_draft_id'], body={'message': {'raw': raw_msg}}).execute()
-                    supabase.table("email_drafts").update({"ai_draft_body": edited_body}).eq("id", selected_email['id']).execute()
+                    gmail_service.users().drafts().update(userId="me", id=selected_email['draft_id'], body={'message': {'raw': raw_msg}}).execute()
+                    supabase.table("email_drafts").update({"draft_body": edited_body}).eq("id", selected_email['id']).execute()
                     st.success("Draft updated!")
                     st.rerun()
 
@@ -90,8 +90,8 @@ with tab1:
             if st.button("Send Email", type="primary", use_container_width=True):
                 with st.spinner("Sending..."):
                     raw_msg = create_raw_email(selected_email['sender_email'], selected_email['email_subject'], edited_body)
-                    gmail_service.users().drafts().update(userId="me", id=selected_email['gmail_draft_id'], body={'message': {'raw': raw_msg}}).execute()
-                    gmail_service.users().drafts().send(userId="me", body={'id': selected_email['gmail_draft_id']}).execute()
+                    gmail_service.users().drafts().update(userId="me", id=selected_email['draft_id'], body={'message': {'raw': raw_msg}}).execute()
+                    gmail_service.users().drafts().send(userId="me", body={'id': selected_email['draft_id']}).execute()
                     supabase.table("email_drafts").update({"status": "sent"}).eq("id", selected_email['id']).execute()
                     st.success("Sent!")
                     st.rerun()
@@ -118,7 +118,7 @@ with tab2:
         h2.metric("Urgency", str(history_email.get('urgency', 'N/A')).title())
         
         with st.expander("Customer's Original Message"):
-            st.text(history_email.get('customer_email_content', 'No content available.'))
+            st.text(history_email.get('email_content', 'No content available.'))
             
         st.markdown("### What the AI Sent")
-        st.text_area("Final Email:", value=history_email['ai_draft_body'], height=300, disabled=True)
+        st.text_area("Final Email:", value=history_email['draft_body'], height=300, disabled=True)
