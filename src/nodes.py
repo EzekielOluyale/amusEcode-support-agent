@@ -313,7 +313,7 @@ def human_review(state: EmailAgentState) -> dict:
     service = get_gmail_service()
     
     message = EmailMessage()
-    message.set_content(state['draft_response'])
+    message.set_content(state.get('draft_response'))
     
     message['to'] = state['sender_email']
     message['subject'] = f"Re: {state.get('email_subject', 'Support Request')}"
@@ -341,7 +341,7 @@ def human_review(state: EmailAgentState) -> dict:
         .execute()
         )
 
-         # Save to Supabase
+        # Save to Supabase
         supabase.table("email_drafts").insert({
             "sender_email": state['sender_email'],
             "email_subject": state.get('email_subject', '(No Subject)'),
@@ -369,7 +369,7 @@ def send_reply(state: EmailAgentState) -> dict:
     service = get_gmail_service()
 
     message = EmailMessage()
-    message.set_content(state['draft_response'])
+    message.set_content(state.get('draft_response'))
     
     message['to'] = state['sender_email']
     message['subject'] = f"Re: {state.get('email_subject', 'Support Request')}"
