@@ -281,7 +281,7 @@ def draft_response(state: EmailAgentState) -> Command[Literal["human_review", "s
 
     draft_prompt = f"""
     Draft a response to this customer email:
-    {state['email_content']}
+    {state.get('email_content', 'No content')}
 
     AGENT DATA    
     Classification: {json.dumps(classification, indent=2)}
@@ -293,7 +293,13 @@ def draft_response(state: EmailAgentState) -> Command[Literal["human_review", "s
         HumanMessage(content=draft_prompt)
     ]
 
-    response = llm.invoke(messages)
+    try:
+        response = llm.invoke(messages)
+        draft_content = response.content
+    except Exception as e:
+        logger.error(f"LLM failed to generate draft: {str(e)}")
+        # Provide a fallback string so the email library doesn't crash
+        draft_content = f"Notice: The AI agent failed to generate a response for this email. Error: {str(e)}\n\nPlease review manually."
 
     # Determine if human review needed based on urgency and intent
     needs_review = (
@@ -301,19 +307,23 @@ def draft_response(state: EmailAgentState) -> Command[Literal["human_review", "s
         classification.get('intent') == 'complex'
     )
 
-    # Route to appropriate next node
-    goto = "human_review" if needs_review else "send_reply"
+    # If the LLM failed, force it to human review
+    if draft_content.startswith("Notice:"):
+        goto = "human_review"
+    else:
+        goto = "human_review" if needs_review else "send_reply"
 
     return Command(
-        update={"draft_response": response.content},  # Store only the raw response
+        update={"draft_response": draft_content},  # Store only the raw response
         goto=goto
     )
 
 def human_review(state: EmailAgentState) -> dict:
     service = get_gmail_service()
     
+    safe_draft = state.get('draft_response') or "Error: Draft generation failed. Review required."
     message = EmailMessage()
-    message.set_content(state.get('draft_response'))
+    message.set_content(safe_draft)
     
     message['to'] = state['sender_email']
     message['subject'] = f"Re: {state.get('email_subject', 'Support Request')}"
