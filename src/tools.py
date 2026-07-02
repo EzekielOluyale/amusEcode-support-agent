@@ -16,7 +16,7 @@ def get_gmail_service():
         scopes=SCOPES
     )
     
-    if creds.expired and creds.refresh_token:
+    if not creds.token or creds.expired:
         creds.refresh(Request())
 
     return build("gmail", "v1", credentials=creds)
