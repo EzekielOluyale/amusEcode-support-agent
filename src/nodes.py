@@ -283,6 +283,12 @@ def draft_response(state: EmailAgentState) -> Command[Literal["human_review", "s
     Draft a response to this customer email:
     {state.get('email_content', 'No content')}
 
+    CONSTRAINTS ON INTENT & URGENCY:
+    IF 'critical', 'billing', or 'complex': You are strictly forbidden from providing technical solutions. Instead, you MUST use this response structure:
+    - Empathetic opening acknowledging the urgency.
+    - Clear statement that you have escalated this to the human support team.
+    - Professional closing regarding follow-up time.
+
     AGENT DATA    
     Classification: {json.dumps(classification, indent=2)}
     {chr(10).join(context_sections)}
