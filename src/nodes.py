@@ -287,7 +287,15 @@ def draft_response(state: EmailAgentState) -> Command[Literal["human_review", "s
     IF 'critical', 'billing', or 'complex': You are strictly forbidden from providing technical solutions. Instead, you MUST use this response structure:
     - Empathetic opening acknowledging the urgency.
     - Clear statement that you have escalated this to the human support team.
-    - Professional closing regarding follow-up time.
+    - Professional closing regarding follow-up time.CRITICAL DRAFTING CONSTRAINTS:
+    {'### ACTION REQUIRED: SENSITIVE INTENT DETECTED' if intent in ['billing', 'complex'] or urgency == 'critical' else '### DRAFTING GUIDELINES'}
+    
+    {
+        "- You are strictly forbidden from providing technical solutions."
+        "- You MUST use this structure: 1) Empathetic opening, 2) Statement of escalation to human support, 3) Professional closing." 
+        if intent in ['billing', 'complex'] or urgency == 'critical' 
+        else "- You are encouraged to provide solutions and use the provided documentation."
+    }
 
     AGENT DATA    
     Classification: {json.dumps(classification, indent=2)}
